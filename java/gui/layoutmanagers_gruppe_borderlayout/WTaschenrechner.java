@@ -57,15 +57,8 @@ public class WTaschenrechner extends JFrame {
 
 	private String calculate(String operator) {
 		String sResult = "something went wrong. check your input.";
-		boolean num = false;
-
 		if (tfInput1.getText().matches("[0-9]+")
 				&& tfInput2.getText().matches("[0-9]+")) {
-			num = true;
-			System.out.println("input = number");
-		}
-
-		if (num) {
 			double x = Double.parseDouble(tfInput1.getText());
 			double y = Double.parseDouble(tfInput2.getText());
 			double result = 0;
