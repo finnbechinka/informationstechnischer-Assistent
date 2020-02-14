@@ -56,30 +56,35 @@ public class WTaschenrechner extends JFrame {
 	}
 
 	private String calculate(String operator) {
-		String sResult = "something went wrong. check you input.";
-		String[] chars = new String[] { "0", "1", "2", "3", "4", "5", "6", "7","8", "9" };
+		String sResult = "something went wrong. check your input.";
 		if (!tfInput1.getText().isEmpty() && !tfInput2.getText().isEmpty()) {
-			for (String c : chars) {
-				if (tfInput1.getText().contains(c)) {
-					double result = 0;
-					double x = Double.parseDouble(tfInput1.getText());
-					double y = Double.parseDouble(tfInput2.getText());
+			boolean num = false;
 
-					if (operator == "+") {
-						result = x + y;
-					} else if (operator == "-") {
-						result = x - y;
-					} else if (operator == "/") {
-						if (y == 0) {
-							return "oi cunt, you cant divide by 0";
-						} else {
-							result = x / y;
-						}
-					} else if (operator == "*") {
-						result = x * y;
+			if (tfInput1.getText().matches("[0-9]*") && 
+				tfInput2.getText().matches("[0-9]*")) {
+				num = true;
+				System.out.println("input = number");
+			}
+
+			if (num) {
+				double x = Double.parseDouble(tfInput1.getText());
+				double y = Double.parseDouble(tfInput2.getText());
+				double result = 0;
+				if (operator == "+") {
+					result = x + y;
+				} else if (operator == "-") {
+					result = x - y;
+				} else if (operator == "/") {
+					if (y == 0) {
+						return "oi cunt, you cant divide by 0";
+					} else {
+						result = x / y;
 					}
-					sResult = Double.toString(result);
+				} else if (operator == "*") {
+					result = x * y;
 				}
+				sResult = Double.toString(result);
+				System.out.println(x + operator + y + ": " + result);
 			}
 		}
 
