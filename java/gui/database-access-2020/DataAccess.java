@@ -121,4 +121,103 @@ public class DataAccess {
 		
 		return columnNames;
 	}
+	
+	public void updateValue(String table, String column, String value, String[][] dataSet) {
+		System.out.println("DataAccess: updateValue() called.");
+		PreparedStatement stmt = null;
+		PreparedStatement meta = null;
+		String str = "";
+		
+		try {
+			meta = connection.prepareStatement("describe " + table);
+			
+			ResultSet rs = meta.executeQuery();
+			String primary = "";
+			while(rs.next()) {
+				if(rs.getString(4).equals("PRI")) {
+					primary = rs.getString(1);
+				}
+			}
+			System.out.println(primary);
+			
+			String primaryval = "";
+			
+			for(int i = 0; i < dataSet.length; i++) {
+				for(int j = 0; j < dataSet[1].length; j++) {
+					if(dataSet[i][0] != null && dataSet[i][0].equals(primary)) {
+						primaryval = dataSet[i][1];
+						break;
+					}
+				}
+			}
+			
+			str = "update " + table + " set " + column + " = '" + value + "' where " + primary + " = '" + primaryval + "'";
+			System.out.println(str);
+		    
+			stmt = connection.prepareStatement(str);
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally{
+			try {if(stmt != null) stmt.close();} catch (SQLException e) {e.printStackTrace();}		
+		}
+	}
+	
+	public void newRow(String table, String[] values) {
+		System.out.println("DataAccess: newRow() called.");
+		PreparedStatement stmt = null;
+		String str = "insert into " + table + " values(";
+		for(int i = 0; i < values.length; i++) {
+			str = str + "'" + values[i] + "'";
+			if(i != values.length - 1) {
+				str = str + ",";
+			}
+		}
+		str = str + ");";
+		
+		System.out.println(str);
+		
+		try {
+			stmt = connection.prepareStatement(str);
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally{
+			try {if(stmt != null) stmt.close();} catch (SQLException e) {e.printStackTrace();}		
+		}
+	}
+	
+	public void deleteRow(String table, String[][] values) {
+		System.out.println("DataAccess: deleteRow() called.");
+		PreparedStatement stmt = null;
+		PreparedStatement meta = null;
+		String str = "delete from " + table + " where ";
+		
+		try {
+			meta = connection.prepareStatement("describe " + table);
+			
+			ResultSet rs = meta.executeQuery();
+			String primary = "";
+			while(rs.next()) {
+				if(rs.getString(4).equals("PRI")) {
+					primary = rs.getString(1);
+				}
+			}
+			
+			str = str + primary + " = ";
+			
+			for(int i = 0; i < values.length; i++) {
+				if(values[i][0].equals(primary)) {
+					str = str + values[i][1];
+				}
+			}
+			
+			stmt = connection.prepareStatement(str);
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally{
+			try {if(stmt != null) stmt.close();} catch (SQLException e) {e.printStackTrace();}		
+		}
+	}
 }

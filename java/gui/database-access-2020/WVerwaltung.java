@@ -18,12 +18,12 @@ public class WVerwaltung extends JFrame {
 	private JPanel mainPanel = new JPanel(new BorderLayout());
 	private JPanel northPanel = new JPanel();
 	private JScrollPane scrollPane = new JScrollPane();
-	private JLabel lDatabase = new JLabel("Database: ");
 	private JLabel lTable = new JLabel("Table: ");
 	private JComboBox<String> cbTables = new JComboBox<>();
-	private JComboBox<String> cbDatabases = new JComboBox<>();
 	private JTable table;
 	private DataAccess da;
+	private JPopupMenu pop = new JPopupMenu();
+	private JMenuItem del = new JMenuItem("delete");
 
 	public WVerwaltung(DataAccess da) {
 		super("Datenbankverwaltung");
@@ -37,28 +37,58 @@ public class WVerwaltung extends JFrame {
 
 	private void init() {
 		this.add(mainPanel);
+		
 		mainPanel.add(northPanel, BorderLayout.NORTH);
-		northPanel.add(lDatabase);
-		northPanel.add(cbDatabases);
 		northPanel.add(lTable);
 		northPanel.add(cbTables);
 		mainPanel.add(scrollPane, BorderLayout.CENTER);
-		fillCbDatabases();
 		fillCbTables();
 		fillTable();
 		cbTables.addActionListener(new cbTablesListener());
-		cbDatabases.addActionListener(new cbDatabasesListener());
+		table.add(pop);
+		pop.add(del);
+		del.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				delRow();
+			}
+		});
 	}
-	
-	private class tableListener implements TableModelListener{
 
+	private void delRow() {
+		String[][] dataSet = new String[table.getColumnCount()][2];
+		for(int i = 0; i < table.getColumnCount(); i++){
+			dataSet[i][0] = table.getColumnName(i);
+			dataSet[i][1] = (String) table.getValueAt(table.getSelectedRow(), i);
+		}
+		
+		da.deleteRow(cbTables.getSelectedItem().toString(), dataSet);
+		
+		fillTable();
+	}
+	private class tableListener implements TableModelListener{
 		@Override
 		public void tableChanged(TableModelEvent e) {
 			System.out.println("WVerwaltung: tableListener --> table changed");
 			int row = e.getFirstRow();
 			int column = e.getColumn();
-			if(row >= 0 && column >= 0){
+			if(row == table.getRowCount() - 1) {
+				if(column == table.getColumnCount() - 1) {
+					String[] values = new String [table.getColumnCount()];
+					for(int i = 0; i < table.getColumnCount(); i++) {
+						values[i] = (String) table.getValueAt(row, i);
+					}
+					for(int i = 0; i < table.getColumnCount(); i++) {
+						System.out.println(values[i]);
+					}
+					DefaultTableModel model = (DefaultTableModel) table.getModel();
+					da.newRow(cbTables.getSelectedItem().toString(), values);
+					
+					model.addRow(new Object[]{});
+				}
+			}else if(row >= 0 && column >= 0){
 				String newValue = (String) table.getValueAt(row, column);
+				String newValueColumn = table.getColumnName(column);
 				String[][] dataSet = new String[table.getColumnCount()][2];
 				for(int i = 0; i < table.getColumnCount(); i++){
 					if(i == column){
@@ -69,11 +99,7 @@ public class WVerwaltung extends JFrame {
 					}
 				}
 				
-				for(int i = 0; i < dataSet.length; i++){
-					for(int j = 0; j < 2; j++){
-						System.out.println(dataSet[i][j]);
-					}
-				}
+				da.updateValue(cbTables.getSelectedItem().toString(), newValueColumn, newValue, dataSet);
 			}
 		}
 		
@@ -87,40 +113,19 @@ public class WVerwaltung extends JFrame {
 		}
 	}
 
-	private class cbDatabasesListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			System.out
-					.println("WVerwaltung: cbDatabasesListener --> action performed");
-			fillCbTables();
-			fillTable();
-		}
-	}
-
 	private void fillCbTables() {
 		System.out.println("WVerwaltung: fillCbTables() called.");
-		ArrayList<String> tables = da.getTables(cbDatabases.getSelectedItem()
-				.toString());
+		ArrayList<String> tables = da.getTables("db_eurotrans");
 		cbTables.removeAllItems();
 		for (int i = 0; i < tables.size(); i++) {
 			cbTables.addItem(tables.get(i));
 		}
 	}
 
-	private void fillCbDatabases() {
-		System.out.println("WVerwaltung: fillCbDatabases() called.");
-		cbDatabases.removeAllItems();
-		ArrayList<String> databases = da.getDatabases();
-		for (int i = 0; i < databases.size(); i++) {
-			cbDatabases.addItem(databases.get(i));
-		}
-	}
 
 	private void fillTable() {
 		System.out.println("WVerwaltung: fillTable() called.");
-		if (cbTables.getSelectedItem() != ""
-				&& cbTables.getSelectedItem() != null
-				&& cbDatabases.getSelectedItem() != ""
-				&& cbDatabases.getSelectedItem() != null) {
+		if (cbTables.getSelectedItem() != "" && cbTables.getSelectedItem() != null) {
 			ArrayList<ArrayList<String>> tableContent = da
 					.getTableContent(cbTables.getSelectedItem().toString());
 			ArrayList<String> columnNames = da.getColumnNames(cbTables
@@ -150,10 +155,18 @@ public class WVerwaltung extends JFrame {
 			table = new JTable(new DefaultTableModel(data, columns));
 			DefaultTableModel model = (DefaultTableModel) table.getModel();
 			model.addTableModelListener(new tableListener());
-			//model.addRow(new Object[]{});
+			model.addRow(new Object[]{});
 			table.getTableHeader().setReorderingAllowed(false);
 
 			scrollPane.setViewportView(table);
+			
+			table.addMouseListener(new MouseAdapter() {
+				public void mouseClicked(MouseEvent me) {
+					if(SwingUtilities.isRightMouseButton(me)) {
+						pop.show(table, me.getX(), me.getY());
+					}
+				}
+			});
 		}
 	}
 }
